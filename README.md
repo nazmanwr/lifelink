@@ -69,6 +69,7 @@ Everything else shown in a list is name, area, blood group and eligibility.
 | `js/views.js` | Every screen and its actions |
 | `js/app.js` | Bootstrap |
 | `tests.html` | Browser test suite |
+| `firestore.rules` | Firebase security rules |
 
 Scripts are classic `<script>` tags rather than ES modules on purpose: browsers block
 module imports on `file://`, and this app is meant to run without a server.
@@ -93,8 +94,10 @@ is decided by the blood bank at donation time.
 `js/store.firebase.js` implements the same interface as the local store, so no screen or
 matching code changes. Two steps:
 
-1. Create a free project at [console.firebase.google.com](https://console.firebase.google.com),
-   then enable **Authentication → Email/Password** and **Firestore Database**.
+1. Create a free project at [console.firebase.google.com](https://console.firebase.google.com) —
+   step-by-step in [FIREBASE-SETUP.md](FIREBASE-SETUP.md), including why the free Spark
+   plan is enough. Enable **Authentication → Email/Password** and **Firestore Database**,
+   and publish the rules from [firestore.rules](firestore.rules).
 2. Copy `firebase-config.example.js` to `firebase-config.js` and paste in your web app's
    config values.
 
@@ -103,31 +106,14 @@ one, it loads the Firebase SDK and the adapter, and skips the demo seed. With no
 file — the default — nothing is downloaded and the local store is used, so the app still
 opens offline from `file://`. An unedited copy of the example file is ignored too.
 
+Security rules live in [firestore.rules](firestore.rules). Read the warning in that file
+before letting strangers sign up: the rules let any signed-in user read every profile,
+and phone numbers currently sit on the profile document, so the database does not yet
+enforce the privacy the screens promise.
+
 The wiring is verified: detection, SDK load, and the in-place store swap. What is **not**
 verified is live Firestore reads and writes, which need a real project — expect to check
 those once yours is connected.
-
-Start Firestore rules from something like this, then tighten:
-
-```
-match /users/{uid} {
-  allow read: if request.auth != null;
-  allow write: if request.auth.uid == uid;
-}
-match /requests/{id} {
-  allow read: if request.auth != null;
-  allow create: if request.auth.uid == request.resource.data.receiverId;
-  allow update, delete: if request.auth.uid == resource.data.receiverId;
-}
-match /responses/{id} {
-  allow read, create: if request.auth != null;
-  allow update: if request.auth != null;
-}
-```
-
-Those rules let any signed-in user read every profile, including phone numbers — the
-app hides them, the database does not. Before going live, move contact details into a
-subcollection readable only by a connected pair.
 
 ## Deploy
 

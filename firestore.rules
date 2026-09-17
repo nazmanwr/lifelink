@@ -1,0 +1,63 @@
+// Firestore security rules for LifeLink.
+//
+// Paste these into Firebase console > Firestore Database > Rules > Publish.
+//
+// Do NOT use the console's "test mode" default instead: it allows the whole
+// world to read and write your database for 30 days, then locks it shut.
+//
+// READ THE WARNING under "responses" before real people sign up.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Public donor/receiver profiles. Any signed-in user can read these,
+    // because matching needs name, area, blood group and eligibility.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // Blood requests are readable by every signed-in donor - that is the
+    // point of them - but only the receiver who posted one can change it.
+    match /requests/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == request.resource.data.receiverId;
+      allow update, delete: if signedIn() && request.auth.uid == resource.data.receiverId;
+    }
+
+    // Offers and invitations.
+    //
+    // WARNING: this rule lets any signed-in user read every response, and a
+    // response names a donor and a request. Combined with the /users rule
+    // above - which exposes the phone number stored on each profile - a
+    // signed-in stranger can read contact details the app's UI hides.
+    //
+    // The interface hides them; these rules do not enforce that. Closing the
+    // gap needs a data-model change, not a rules tweak: move phone numbers
+    // out of the profile document into a private per-user document, and copy
+    // a contact snapshot into a response only when both sides connect. That
+    // also requires the adapter's list() to narrow with where() clauses,
+    // since a collection-wide read would then be denied.
+    //
+    // Fine while it is you and a few testers. Not fine once strangers can
+    // sign up.
+    match /responses/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if false;
+    }
+
+    // Anything not matched above is denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
