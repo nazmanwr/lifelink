@@ -57,6 +57,14 @@ BD.views = (function () {
       '</div>';
   }
 
+  /* Demo accounts exist only in the local prototype — seeding is skipped
+     against a shared database, so advertising them there sends people to a
+     login that cannot work. */
+  function demoNote(html) {
+    if (store.backend === 'firebase') return '';
+    return '<p class="demo-note">' + html + '</p>';
+  }
+
   function groupOptions(selected) {
     return blood.BLOOD_GROUPS.map(function (g) {
       return '<option value="' + attr(g) + '"' + (g === selected ? ' selected' : '') + '>' + h(g) + '</option>';
@@ -126,8 +134,8 @@ BD.views = (function () {
       '<div class="how__card"><span class="how__step">3</span><h3>Connect</h3>' +
       '<p>Phone numbers are shared only once a donor offers or a receiver invites — never browsed openly.</p></div>' +
       '</section>' +
-      '<p class="demo-note">Demo accounts are preloaded. Log in with <strong>rafiq@demo.app</strong> (donor) ' +
-      'or <strong>kamal@demo.app</strong> (receiver), password <strong>demo1234</strong>.</p>'
+      demoNote('Demo accounts are preloaded. Log in with <strong>rafiq@demo.app</strong> (donor) ' +
+        'or <strong>kamal@demo.app</strong> (receiver), password <strong>demo1234</strong>.')
     );
   }
 
@@ -144,7 +152,7 @@ BD.views = (function () {
       '<button class="btn btn--primary btn--block" type="submit">Log in</button>' +
       '</form>' +
       '<p class="auth__alt">New here? <a href="#/signup/donor">Create an account</a></p>' +
-      '<p class="demo-note">Try <strong>rafiq@demo.app</strong> / <strong>demo1234</strong>.</p>' +
+      demoNote('Try <strong>rafiq@demo.app</strong> / <strong>demo1234</strong>.') +
       '</section>'
     );
   }
