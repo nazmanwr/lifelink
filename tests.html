@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LifeLink — logic tests</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .t { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .85rem; }
+    .t li { padding: .25rem 0; border-bottom: 1px solid var(--border); list-style: none; }
+    .t ul { padding: 0; margin: 0 0 1rem; }
+    .pass::before { content: "PASS "; color: var(--ok); font-weight: 700; }
+    .fail::before { content: "FAIL "; color: var(--red-600); font-weight: 700; }
+    .fail { color: var(--red-600); }
+    .score { font-size: 1.3rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main class="main">
+    <h1>Logic tests</h1>
+    <p class="muted">Blood compatibility, eligibility, distance, ranking and storage.
+      Store tests write temporary records and delete them again.</p>
+    <p id="score" class="score">Running…</p>
+    <div id="out" class="t"></div>
+    <p><a class="btn btn--outline" href="index.html">Back to the app</a></p>
+  </main>
+
+  <script src="js/blood.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/match.js"></script>
+  <script>
+  (function () {
+    let passed = 0, failed = 0;
+    let group = null;
+    const out = document.getElementById('out');
+
+    function describe(name) {
+      const h = document.createElement('h2');
+      h.textContent = name;
+      out.appendChild(h);
+      group = document.createElement('ul');
+      out.appendChild(group);
+    }
+
+    function record(ok, label, detail) {
+      const li = document.createElement('li');
+      li.className = ok ? 'pass' : 'fail';
+      li.textContent = label + (ok || !detail ? '' : ' — ' + detail);
+      group.appendChild(li);
+      ok ? passed++ : failed++;
+    }
+
+    function ok(value, label) { record(!!value, label, 'expected truthy, got ' + value); }
+    function eq(actual, expected, label) {
+      record(actual === expected, label, 'expected ' + expected + ', got ' + actual);
+    }
+    function near(actual, expected, tolerance, label) {
+      const good = actual !== null && Math.abs(actual - expected) <= tolerance;
+      record(good, label, 'expected ~' + expected + ' ±' + tolerance + ', got ' + actual);
+    }
+    function same(actual, expected, label) {
+      record(JSON.stringify(actual) === JSON.stringify(expected), label,
+        'expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
+    }
+
+    const blood = BD.blood, geo = BD.geo, match = BD.match, store = BD.store;
+
+    /* ---- compatibility ---- */
+    describe('Blood group compatibility');
+    eq(blood.donatesTo('O-').length, 8, 'O- is a universal donor (gives to all 8 groups)');
+    eq(blood.receivesFrom('AB+').length, 8, 'AB+ is a universal recipient');
+    same(blood.receivesFrom('O-'), ['O-'], 'O- can only receive O-');
+    same(blood.receivesFrom('A+'), ['O-', 'O+', 'A-', 'A+'], 'A+ receives O-, O+, A-, A+');
+    same(blood.receivesFrom('B-'), ['O-', 'B-'], 'B- receives O- and B- only');
+    same(blood.receivesFrom('AB-'), ['O-', 'A-', 'B-', 'AB-'], 'AB- receives all negatives');
+    ok(blood.isCompatible('O-', 'A+'), 'O- donor is compatible with an A+ patient');
+    ok(!blood.isCompatible('A+', 'O+'), 'A+ donor is NOT compatible with an O+ patient');
+    ok(!blood.isCompatible('AB+', 'AB-'), 'AB+ donor is NOT compatible with an AB- patient');
+    ok(blood.BLOOD_GROUPS.every(function (g) { return blood.isCompatible(g, g); }),
+      'every group is compatible with itself');
+    ok(blood.BLOOD_GROUPS.every(function (recipient) {
+      return blood.receivesFrom(recipient).every(function (donor) {
+        return blood.donatesTo(donor).indexOf(recipient) !== -1;
+      });
+    }), 'receivesFrom and donatesTo agree in both directions');
+
+    /* ---- eligibility ---- */
+    describe('Donation eligibility');
+    const today = new Date('2026-06-01T00:00:00Z');
+    const daysBefore = function (n) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    };
+    eq(blood.daysUntilEligible('', today), 0, 'a donor who never donated is eligible now');
+    eq(blood.daysUntilEligible(daysBefore(100), today), 0, 'donated 100 days ago -> eligible');
+    eq(blood.daysUntilEligible(daysBefore(30), today), 60, 'donated 30 days ago -> 60 days to wait');
+    eq(blood.daysUntilEligible(daysBefore(90), today), 0, 'exactly 90 days ago -> eligible');
+    ok(blood.eligibility({ available: true, lastDonation: daysBefore(200) }, today).ok,
+      'available donor past the gap is eligible');
+    ok(!blood.eligibility({ available: false, lastDonation: '' }, today).ok,
+      'paused donor is not offered, even when medically eligible');
+    ok(!blood.eligibility({ available: true, lastDonation: daysBefore(5) }, today).ok,
+      'donor inside the 90-day gap is not eligible');
+
+    /* ---- distance ---- */
+    describe('Distance');
+    const dhanmondi = { lat: 23.7461, lng: 90.3742 };
+    const gulshan = { lat: 23.7925, lng: 90.4078 };
+    const uttara = { lat: 23.8759, lng: 90.3795 };
+    eq(geo.distanceKm(dhanmondi, dhanmondi), 0, 'distance to the same point is 0');
+    near(geo.distanceKm(dhanmondi, gulshan), 6.2, 1, 'Dhanmondi to Gulshan is about 6 km');
+    near(geo.distanceKm(dhanmondi, uttara), 14.5, 1.5, 'Dhanmondi to Uttara is about 14.5 km');
+    near(geo.distanceKm(dhanmondi, gulshan), geo.distanceKm(gulshan, dhanmondi), 0.0001,
+      'distance is symmetric');
+    eq(geo.distanceKm(dhanmondi, null), null, 'missing coordinates give null, not a wrong number');
+    eq(geo.distanceKm(dhanmondi, { lat: 'x', lng: 1 }), null, 'non-numeric coordinates give null');
+    eq(geo.formatDistance(0.4), '400 m away', 'sub-kilometre distances show in metres');
+    eq(geo.formatDistance(null), 'Distance unknown', 'null distance has a readable label');
+
+    /* ---- matching ---- */
+    describe('Matching and ranking');
+    const request = {
+      id: 'r1', receiverId: 'rx', bloodGroup: 'A+', status: 'open',
+      city: 'Dhaka', location: dhanmondi, urgency: 'urgent', units: 2
+    };
+    const donors = [
+      { id: 'd_far_ok',   role: 'donor', name: 'Far eligible',   bloodGroup: 'O-', city: 'Dhaka', location: uttara,    available: true, lastDonation: '' },
+      { id: 'd_near_ok',  role: 'donor', name: 'Near eligible',  bloodGroup: 'A+', city: 'Dhaka', location: gulshan,   available: true, lastDonation: '' },
+      { id: 'd_near_wait',role: 'donor', name: 'Near ineligible',bloodGroup: 'O+', city: 'Dhaka', location: dhanmondi, available: true, lastDonation: daysBefore(5) },
+      { id: 'd_wrong',    role: 'donor', name: 'Wrong group',    bloodGroup: 'B+', city: 'Dhaka', location: dhanmondi, available: true, lastDonation: '' },
+      { id: 'd_nogps',    role: 'donor', name: 'Same city only', bloodGroup: 'A-', city: 'Dhaka', location: null,      available: true, lastDonation: '' },
+      { id: 'd_other',    role: 'donor', name: 'Other city',     bloodGroup: 'O-', city: 'Sylhet', location: null,     available: true, lastDonation: '' }
+    ];
+    const ranked = match.rankDonorsForRequest(request, donors, today);
+    const ids = ranked.map(function (m) { return m.donor.id; });
+
+    eq(ids.indexOf('d_wrong'), -1, 'an incompatible group (B+ for A+) is excluded entirely');
+    eq(ids.length, 5, 'the five compatible donors are all returned');
+    eq(ids[0], 'd_near_ok', 'nearest eligible compatible donor ranks first');
+    ok(ids.indexOf('d_near_wait') > ids.indexOf('d_far_ok'),
+      'a closer donor inside the 90-day gap ranks below a far eligible one');
+    ok(ids.indexOf('d_nogps') < ids.indexOf('d_other'),
+      'same-city donor without GPS outranks a donor in another city');
+    eq(ranked[0].proximityBasis, 'gps', 'GPS is used when both sides have coordinates');
+    eq(ranked.find(function (m) { return m.donor.id === 'd_nogps'; }).proximityBasis, 'city',
+      'city fallback is used when coordinates are missing');
+    ok(!ranked.find(function (m) { return m.donor.id === 'd_near_wait'; }).eligibility.ok,
+      'ineligible donors are still listed, but flagged');
+
+    const donor = { id: 'me', role: 'donor', bloodGroup: 'O-', city: 'Dhaka', location: dhanmondi, available: true, lastDonation: '' };
+    const requests = [
+      { id: 'q_near_routine', receiverId: 'rx', status: 'open', bloodGroup: 'A+', city: 'Dhaka', location: gulshan,   urgency: 'routine',  units: 1 },
+      { id: 'q_far_critical', receiverId: 'rx', status: 'open', bloodGroup: 'O+', city: 'Dhaka', location: uttara,    urgency: 'critical', units: 1 },
+      { id: 'q_closed',       receiverId: 'rx', status: 'fulfilled', bloodGroup: 'A+', city: 'Dhaka', location: dhanmondi, urgency: 'critical', units: 1 },
+      { id: 'q_mine',         receiverId: 'me', status: 'open', bloodGroup: 'A+', city: 'Dhaka', location: dhanmondi, urgency: 'critical', units: 1 }
+    ];
+    const feed = match.rankRequestsForDonor(donor, requests, today);
+    const feedIds = feed.map(function (m) { return m.request.id; });
+    eq(feedIds.indexOf('q_closed'), -1, 'fulfilled requests are not shown to donors');
+    eq(feedIds.indexOf('q_mine'), -1, 'a donor never sees their own request');
+    eq(feedIds.length, 2, 'both open compatible requests are shown');
+    ok(feed[0].score <= feed[1].score, 'feed is sorted by score ascending');
+
+    /* ---- store ---- */
+    describe('Storage and auth');
+    (async function () {
+      const created = [];
+      try {
+        const salt = store.randomSalt();
+        const a = await store.hashPassword('hunter2', salt);
+        const b = await store.hashPassword('hunter2', salt);
+        const c = await store.hashPassword('hunter3', salt);
+        eq(a, b, 'the same password and salt hash identically');
+        ok(a !== c, 'different passwords hash differently');
+        ok(a.indexOf('hunter2') === -1, 'the plain password is not present in the hash');
+
+        const user = await store.users.create({ name: 'Test User', email: 'test+unit@demo.app', role: 'donor', bloodGroup: 'O+' });
+        created.push(user.id);
+        ok(!!user.id, 'created records get an id');
+        ok(!!user.createdAt, 'created records get a timestamp');
+
+        const found = await store.users.byEmail('TEST+UNIT@demo.app');
+        eq(found && found.id, user.id, 'byEmail is case-insensitive');
+
+        const updated = await store.users.update(user.id, { area: 'Mirpur' });
+        eq(updated.area, 'Mirpur', 'update applies a patch');
+        eq(updated.name, 'Test User', 'update leaves other fields alone');
+
+        const reread = await store.users.byId(user.id);
+        eq(reread.area, 'Mirpur', 'changes persist to storage');
+
+        reread.name = 'Mutated';
+        const again = await store.users.byId(user.id);
+        eq(again.name, 'Test User', 'reads return copies, so callers cannot corrupt the store');
+
+        let threw = false;
+        try { await store.users.update('nope_missing', { a: 1 }); } catch (e) { threw = true; }
+        ok(threw, 'updating a missing record throws');
+
+        await store.users.remove(user.id);
+        created.pop();
+        eq(await store.users.byId(user.id), null, 'remove deletes the record');
+      } catch (err) {
+        record(false, 'store tests threw: ' + err.message);
+      } finally {
+        for (const id of created) { try { await store.users.remove(id); } catch (e) {} }
+        finish();
+      }
+    })();
+
+    function finish() {
+      const score = document.getElementById('score');
+      score.textContent = passed + ' passed, ' + failed + ' failed';
+      score.style.color = failed ? 'var(--red-600)' : 'var(--ok)';
+    }
+  })();
+  </script>
+</body>
+</html>
