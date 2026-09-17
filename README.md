@@ -69,6 +69,7 @@ Everything else shown in a list is name, area, blood group and eligibility.
 | `js/views.js` | Every screen and its actions |
 | `js/app.js` | Bootstrap |
 | `tests.html` | Browser test suite |
+| `serve.ps1` | Optional local dev server (`powershell -ExecutionPolicy Bypass -File serve.ps1`) |
 | `firestore.rules` | Firebase security rules |
 
 Scripts are classic `<script>` tags rather than ES modules on purpose: browsers block

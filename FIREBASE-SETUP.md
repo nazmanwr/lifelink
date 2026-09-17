@@ -66,6 +66,24 @@ These values are safe to share and safe to ship in client code — they identify
 project, they do not grant access to it. Access is controlled entirely by the rules from
 step 4. (`firebase-config.js` is gitignored regardless.)
 
+## Status for the roktodaan-69692 project
+
+Tested against the live project on 18 Sep 2026:
+
+| | |
+| --- | --- |
+| Adapter activates from the config | works |
+| Firebase SDK loads | works |
+| **Email/Password signup and sign-in** | **works** — accounts are really created |
+| **Firestore reads and writes** | **denied** — `permission-denied`, even for a signed-in user reading their own document |
+
+A signed-in user being refused their own document means the database is still on the
+locked default from "production mode". **Step 4 above is the one thing outstanding**:
+paste [`firestore.rules`](firestore.rules) into the console and Publish.
+
+Also verified along the way: the app talks to Firebase correctly from a plain `file://`
+URL, so no local server is needed for this to work.
+
 ## What happens when you paste it
 
 I create `firebase-config.js`, and [`js/backend.js`](js/backend.js) picks it up at
