@@ -1,0 +1,46 @@
+{
+  "name": "RoktoDaan — Blood Donor Connect",
+  "short_name": "RoktoDaan",
+  "description": "Connects people who need blood with compatible donors nearby, matched by blood group and sorted by distance.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f5f7",
+  "theme_color": "#b91c3c",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["health", "medical", "social"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Post a blood request",
+      "short_name": "New request",
+      "url": "./index.html#/new-request"
+    },
+    {
+      "name": "Nearby requests",
+      "short_name": "Requests",
+      "url": "./index.html#/home"
+    }
+  ]
+}

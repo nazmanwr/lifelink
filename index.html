@@ -7,6 +7,11 @@
   <meta name="description" content="RoktoDaan connects blood donors with people who need blood, matched by blood group and sorted by distance.">
   <title>RoktoDaan — Blood Donor Connect</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="RoktoDaan">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="is-loading">
@@ -42,5 +47,16 @@
   <script src="js/ui.js"></script>
   <script src="js/views.js"></script>
   <script src="js/app.js"></script>
+
+  <script>
+    /* Registration only works over https or localhost; from file:// it just
+       throws, which is fine - the app does not depend on it. */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js', { scope: './' })
+          .catch(function (err) { console.info('Service worker not registered:', err.message); });
+      });
+    }
+  </script>
 </body>
 </html>
