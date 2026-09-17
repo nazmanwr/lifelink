@@ -1,0 +1,34 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>live check</title></head><body>
+<div id="log"></div>
+<iframe id="f" src="./index.html" style="width:420px;height:600px"></iframe>
+<script src="js/blood.js"></script><script src="js/geo.js"></script><script src="js/store.js"></script>
+<script src="js/match.js"></script><script src="js/backend.js"></script>
+<script>
+function rec(m){ try{ fetch('http://localhost:8099/log?m='+encodeURIComponent(m),{mode:'no-cors'}); }catch(e){}
+  var d=document.createElement('p'); d.textContent=m; document.getElementById('log').appendChild(d); }
+(async function(){
+  var S=BD.store, t=Date.now(), U={email:'live-'+t+'@lifelink.test', pw:'Live-'+t};
+  rec('ORIGIN: ' + location.origin);
+  try {
+    var mode = await BD.backend.ready();
+    rec('backend on live site: ' + mode);
+    var u = await S.auth.signUp({name:'Live Check', email:U.email, phone:'+8801700000000',
+      password:U.pw, role:'donor', bloodGroup:'O-', city:'Dhaka', area:'Uttara',
+      location:{lat:23.8759,lng:90.3795}});
+    rec('PASS signup works from ' + location.hostname);
+    var open = await S.requests.list(function(r){ return r.status==='open'; });
+    rec('PASS firestore read from live origin (' + open.length + ' open requests)');
+    await S.users.remove(u.id);
+    await firebase.auth().currentUser.delete();
+    rec('PASS cleanup done');
+  } catch(e){ rec('FAIL: ' + (e.code||'') + ' ' + e.message); }
+  setTimeout(function(){
+    try {
+      var txt = (document.getElementById('f').contentDocument.getElementById('main').innerText||'').replace(/\s+/g,' ').trim();
+      rec('APP UI: ' + txt.slice(0,110));
+      rec('stuck on loading: ' + /^Loading/.test(txt));
+    } catch(e){ rec('UI READ FAILED: ' + e.message); }
+    rec('ALL-FINISHED');
+  }, 6000);
+})();
+</script></body></html>
