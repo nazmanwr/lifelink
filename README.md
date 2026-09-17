@@ -61,6 +61,7 @@ Everything else shown in a list is name, area, blood group and eligibility.
 | `js/blood.js` | Compatibility table and the 90-day eligibility rule |
 | `js/geo.js` | Geolocation capture and haversine distance |
 | `js/store.js` | Data + auth layer (localStorage) |
+| `js/backend.js` | Picks the backend at startup: local, or Firebase if configured |
 | `js/store.firebase.js` | Same interface, backed by Firebase (opt-in) |
 | `js/match.js` | Ranking engine |
 | `js/seed.js` | Demo accounts and requests |
@@ -89,14 +90,22 @@ is decided by the blood bank at donation time.
 
 ## Going multi-device with Firebase
 
-`js/store.firebase.js` already implements the same interface as the local store, so no
-screen or matching code changes. Steps are in the comment at the top of that file:
-create a Firebase project, enable Email/Password auth and Firestore, copy
-`firebase-config.example.js` to `firebase-config.js` with your values, add four script
-tags to `index.html`, and drop `js/seed.js`.
+`js/store.firebase.js` implements the same interface as the local store, so no screen or
+matching code changes. Two steps:
 
-That adapter is written against the documented compat API but has not been run against a
-live project, since there is no Firebase project yet — verify it once yours is connected.
+1. Create a free project at [console.firebase.google.com](https://console.firebase.google.com),
+   then enable **Authentication → Email/Password** and **Firestore Database**.
+2. Copy `firebase-config.example.js` to `firebase-config.js` and paste in your web app's
+   config values.
+
+That is all. `js/backend.js` looks for `firebase-config.js` at startup: finding a real
+one, it loads the Firebase SDK and the adapter, and skips the demo seed. With no config
+file — the default — nothing is downloaded and the local store is used, so the app still
+opens offline from `file://`. An unedited copy of the example file is ignored too.
+
+The wiring is verified: detection, SDK load, and the in-place store swap. What is **not**
+verified is live Firestore reads and writes, which need a real project — expect to check
+those once yours is connected.
 
 Start Firestore rules from something like this, then tighten:
 

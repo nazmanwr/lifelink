@@ -9,14 +9,10 @@
  *      Enable Authentication > Email/Password, and Firestore Database.
  *   2. Copy firebase-config.example.js to firebase-config.js and paste your
  *      web app's config object into it.
- *   3. In index.html, ADD these before js/store.js:
- *        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
- *        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
- *        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
- *        <script src="firebase-config.js"></script>
- *      and ADD this AFTER js/store.js:
- *        <script src="js/store.firebase.js"></script>
- *   4. Remove js/seed.js — demo accounts belong in the local prototype only.
+ *
+ * That is the whole procedure. js/backend.js looks for firebase-config.js at
+ * startup; finding a real one, it pulls in the SDK and this adapter, and skips
+ * the demo seed. With no config file, nothing here is downloaded at all.
  *
  * The compat SDK is used deliberately: it works with classic <script> tags,
  * so the app keeps running from file:// without a build step.
@@ -139,8 +135,12 @@
     }
   };
 
-  /* Swap the implementation in place. Everything above BD.store is unchanged. */
-  BD.store = {
+  /* Mutate BD.store in place rather than replacing the object. views.js and
+     seed.js capture `BD.store` when they load, which is before this adapter
+     runs — reassigning the reference would leave every screen still talking
+     to localStorage. */
+  Object.assign(BD.store, {
+    backend: 'firebase',
     users: users,
     requests: requests,
     responses: responses,
@@ -155,7 +155,7 @@
     hashPassword: async function () { throw new Error('Firebase Auth handles passwords.'); },
     randomSalt: function () { return ''; },
     usingMemory: function () { return false; }
-  };
+  });
 
   console.info('LifeLink is using the Firebase store.');
 })();
