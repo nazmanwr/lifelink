@@ -112,9 +112,11 @@ before letting strangers sign up: the rules let any signed-in user read every pr
 and phone numbers currently sit on the profile document, so the database does not yet
 enforce the privacy the screens promise.
 
-The wiring is verified: detection, SDK load, and the in-place store swap. What is **not**
-verified is live Firestore reads and writes, which need a real project — expect to check
-those once yours is connected.
+Verified against a live project end to end: two separate accounts, a request posted by
+one and seen by the other, ranked by live distance, with an offer sent back and read.
+See [FIREBASE-SETUP.md](FIREBASE-SETUP.md) for the full result. What is **not**
+covered is load at scale; the adapter reads a whole collection and filters client-side,
+which is fine for a city-sized dataset and should become `where()` queries beyond that.
 
 ## Deploy
 

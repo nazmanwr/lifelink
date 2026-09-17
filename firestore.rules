@@ -21,7 +21,9 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == uid;
-      allow delete: if false;
+      // People must be able to leave. Only your own profile, never anyone
+      // else's - and deleting the Firebase Auth account is separate.
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
     // Blood requests are readable by every signed-in donor - that is the

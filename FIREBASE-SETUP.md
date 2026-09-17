@@ -68,21 +68,26 @@ step 4. (`firebase-config.js` is gitignored regardless.)
 
 ## Status for the roktodaan-69692 project
 
-Tested against the live project on 18 Sep 2026:
+Connected and verified end to end on 18 Sep 2026, with two separate accounts:
 
 | | |
 | --- | --- |
-| Adapter activates from the config | works |
-| Firebase SDK loads | works |
-| **Email/Password signup and sign-in** | **works** — accounts are really created |
-| **Firestore reads and writes** | **denied** — `permission-denied`, even for a signed-in user reading their own document |
+| Adapter activates, SDK loads | works |
+| Email/Password signup and sign-in | works |
+| Receiver posts a request | works |
+| **A different account sees that request** | **works** — this is the whole point of the app |
+| Compatibility + live distance ranking | works (O− donor matched to A+ patient, 9.7 km) |
+| Donor sends an offer | works |
+| Receiver reads the offer back after signing in again | works |
+| Receiver updates their own request | works |
 
-A signed-in user being refused their own document means the database is still on the
-locked default from "production mode". **Step 4 above is the one thing outstanding**:
-paste [`firestore.rules`](firestore.rules) into the console and Publish.
+Also verified: the app talks to Firebase correctly from a plain `file://` URL, so no
+local server is needed.
 
-Also verified along the way: the app talks to Firebase correctly from a plain `file://`
-URL, so no local server is needed for this to work.
+Two notes from that run. `allow delete: if false` on `/users` meant nobody could remove
+their own profile, so test cleanup was refused; the rule now permits deleting your own
+document only, which is also what a real "delete my account" needs. And `/responses`
+still forbids deletion by design, to keep an audit trail of who offered what.
 
 ## What happens when you paste it
 
