@@ -1,4 +1,4 @@
-# Connecting LifeLink to Firebase (free tier)
+# Connecting RoktoDaan to Firebase (free tier)
 
 Fifteen minutes, no credit card. At the end, a donor on one phone and a receiver on
 another see each other for real.
@@ -14,7 +14,7 @@ account. This app uses exactly two Firebase products, both included:
 | **Authentication** | Unlimited email/password accounts | Signs people in |
 
 What forces the paid **Blaze** plan is Cloud Functions, some extensions, and outbound
-networking. LifeLink uses none of them, so there is nothing to upgrade.
+networking. RoktoDaan uses none of them, so there is nothing to upgrade.
 
 For scale: one donor opening the app and scrolling their request feed costs roughly a
 few dozen reads. 50,000 a day is a lot of scrolling.
@@ -26,7 +26,7 @@ If the console ever offers to upgrade you to Blaze, you can decline and keep goi
 **1. Create the project**
 
 Go to [console.firebase.google.com](https://console.firebase.google.com) → **Create a
-project**. Name it anything (`lifelink` is fine). Turn **Google Analytics off** — it is
+project**. Name it anything (`roktodaan` is fine). Turn **Google Analytics off** — it is
 not needed and adds a consent step.
 
 **2. Turn on Authentication**
@@ -64,7 +64,10 @@ what I need — six values: `apiKey`, `authDomain`, `projectId`, `storageBucket`
 
 These values are safe to share and safe to ship in client code — they identify your
 project, they do not grant access to it. Access is controlled entirely by the rules from
-step 4. (`firebase-config.js` is gitignored regardless.)
+step 4.
+
+`firebase-config.js` is committed to this repo on purpose: GitHub Pages serves only
+what is in the repo, so the hosted app needs it to reach the database.
 
 ## Status for the roktodaan-69692 project
 

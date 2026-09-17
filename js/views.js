@@ -118,7 +118,7 @@ BD.views = (function () {
       '<section class="hero">' +
       '<div class="hero__mark" aria-hidden="true">🩸</div>' +
       '<h1>Give blood. Find blood.<br>Close to home.</h1>' +
-      '<p class="hero__sub">LifeLink connects people who need blood with compatible donors nearby — ' +
+      '<p class="hero__sub">RoktoDaan connects people who need blood with compatible donors nearby — ' +
       'matched by blood group, sorted by how far away they actually are.</p>' +
       '<div class="hero__actions">' +
       '<a class="btn btn--primary btn--lg" href="#/signup/donor">I want to donate</a>' +

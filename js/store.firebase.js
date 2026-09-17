@@ -17,9 +17,8 @@
  * The compat SDK is used deliberately: it works with classic <script> tags,
  * so the app keeps running from file:// without a build step.
  *
- * NOTE: this adapter is written against the documented compat API but has not
- * been run against a live project here, since no Firebase project exists yet.
- * Expect to verify it once your own project is connected.
+ * Verified end to end against a live project: signup, sign-in, cross-account
+ * reads and writes, and the app's own screens. See FIREBASE-SETUP.md.
  */
 (function () {
   if (typeof firebase === 'undefined' || !window.FIREBASE_CONFIG) {
@@ -157,5 +156,5 @@
     usingMemory: function () { return false; }
   });
 
-  console.info('LifeLink is using the Firebase store.');
+  console.info('RoktoDaan is using the Firebase store.');
 })();

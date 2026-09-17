@@ -1,4 +1,4 @@
-# LifeLink — Blood Donor Connect
+# RoktoDaan — Blood Donor Connect
 
 A web app that connects people who need blood with donors nearby. Donors sign up with
 their blood group and location; receivers post a request for a patient. The app filters

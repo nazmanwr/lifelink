@@ -39,7 +39,7 @@ try {
 }
 
 Write-Host ""
-Write-Host "  LifeLink is being served from $Root" -ForegroundColor Green
+Write-Host "  RoktoDaan is being served from $Root" -ForegroundColor Green
 Write-Host "  Open  http://localhost:$Port/" -ForegroundColor Cyan
 Write-Host "  Tests http://localhost:$Port/tests.html" -ForegroundColor DarkCyan
 Write-Host "  Ctrl+C to stop."
