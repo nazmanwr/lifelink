@@ -1,0 +1,27 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div id="log"></div>
+<script>
+function rec(m){ try{ fetch('http://localhost:8099/log?m='+encodeURIComponent(m),{mode:'no-cors'}); }catch(e){} }
+(async function(){
+  try {
+    var r = await fetch('manifest.webmanifest');
+    var m = await r.json();
+    rec('manifest parsed: name=' + m.name);
+    rec('short_name: ' + m.short_name + ' | display: ' + m.display + ' | theme: ' + m.theme_color);
+    rec('start_url: ' + m.start_url + ' | scope: ' + m.scope);
+    var has192 = m.icons.some(function(i){return i.sizes==='192x192';});
+    var has512 = m.icons.some(function(i){return i.sizes==='512x512';});
+    var hasMask = m.icons.some(function(i){return (i.purpose||'').indexOf('maskable')!==-1;});
+    rec('icons: 192=' + has192 + ' 512=' + has512 + ' maskable=' + hasMask);
+    for (var i=0;i<m.icons.length;i++){
+      var ir = await fetch(m.icons[i].src, {method:'HEAD'});
+      rec('  icon ' + m.icons[i].src + ' -> HTTP ' + ir.status);
+    }
+    var reg = await navigator.serviceWorker.register('sw.js', {scope:'./'});
+    await navigator.serviceWorker.ready;
+    rec('service worker: registered and ACTIVE (scope ' + reg.scope + ')');
+    rec('INSTALLABLE REQUIREMENTS: https=' + (location.protocol==='https:') +
+        ' manifest=yes icons=' + (has192&&has512) + ' sw=yes display=' + m.display);
+  } catch(e){ rec('FAIL: ' + e.name + ' ' + e.message); }
+  rec('ALL-FINISHED');
+})();
+</script></body></html>
