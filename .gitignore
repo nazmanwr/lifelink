@@ -5,3 +5,7 @@ node_modules/
 *.apk
 *.aab
 *.keystore
+signing-key-info.txt
+assetlinks.json
+Readme.html
+signing.keystore
